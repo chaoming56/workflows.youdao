@@ -58,7 +58,7 @@ class SaveWord(object):
         login_data = urllib.parse.urlencode({
             'app': 'web',
             'tp': 'urstoken',
-            'cf': '7',
+            'cf': '3',
             'fr': '1',
             'ru': 'http://dict.youdao.com',
             'product': 'DICT',
@@ -66,7 +66,8 @@ class SaveWord(object):
             'um': 'true',
             'username': self.username,
             'password': self.password,
-            'savelogin': '1',
+             # 'savelogin': '1',
+            'agreePrRule': '1',
         }).encode("utf-8")
         response = self.opener.open(
             'https://logindict.youdao.com/login/acc/login', login_data)
@@ -83,16 +84,14 @@ class SaveWord(object):
     def syncToYoudao(self):
         post_data = urllib.parse.urlencode({
             'word': self.word.get('word'),
-            'phonetic': self.word.get('phonetic'),
-            'desc': self.word.get('trans'),
-            'tags': self.word.get('tags'),
         }).encode("utf-8")
         self.opener.addheaders = fake_header + [
             ('Referer', 'http://dict.youdao.com/wordbook/wordlist'),
         ]
-        response = self.opener.open(
-            'http://dict.youdao.com/wordbook/wordlist?action=add', post_data)
-        return response.headers.get('Location') == 'http://dict.youdao.com/wordbook/wordlist'
+        response = self.opener.open('http://dict.youdao.com/wordbook/ajax?action=addword&q=%s&le=eng' % (urllib.parse.quote(self.word.get('word'))), post_data)
+
+        content = response.read()
+        return 1
 
     def generateWordBook(self, source_xml):
         item = self.word
@@ -148,17 +147,14 @@ if __name__ == '__main__':
     else:
         filepath = os.path.expanduser(filepath)
 
-    password_md5 = hashlib.md5(password.encode("utf-8")).hexdigest()
-
     item = {
         "word": query,
         "trans": result,
-        # "phonetic":
         "tags": "Alfred",
         "progress": "-1",
     }
 
-    saver = SaveWord(username, password_md5, filepath, item)
+    saver = SaveWord(username, password, filepath, item)
 
     wf = Workflow3()
     sys.exit(wf.run(saver.save))
